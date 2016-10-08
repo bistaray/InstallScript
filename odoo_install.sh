@@ -28,7 +28,7 @@ OE_PORT="8069"
 #IMPORTANT! This script contains extra libraries that are specifically needed for Odoo 10.0
 OE_VERSION="10.0"
 # Set this to True if you want to install Odoo 10 Enterprise!
-IS_ENTERPRISE="False"
+IS_ENTERPRISE="True"
 #set the superadmin password
 OE_SUPERADMIN="admin"
 OE_CONFIG="${OE_USER}-server"
@@ -106,7 +106,7 @@ sudo chown $OE_USER:$OE_USER /var/log/$OE_USER
 # Install ODOO
 #--------------------------------------------------
 echo -e "\n==== Installing ODOO Server ===="
-sudo git clone --depth 1 --branch $OE_VERSION https://www.github.com/odoo/odoo $OE_HOME_EXT/
+sudo git clone --depth 1 --branch $OE_VERSION https://github.com/bistaray/odoo $OE_HOME_EXT/
 
 if [ $IS_ENTERPRISE = "True" ]; then
     # Odoo Enterprise install!
@@ -116,7 +116,7 @@ if [ $IS_ENTERPRISE = "True" ]; then
     sudo su $OE_USER -c "mkdir $OE_HOME/enterprise/addons"
 
     echo -e "\n---- Adding Enterprise code under $OE_HOME/enterprise/addons ----"
-    sudo git clone --depth 1 --branch 10.0 https://www.github.com/odoo/enterprise "$OE_HOME/enterprise/addons"
+    sudo git clone --depth 1 --branch 10.0 https://github.com/bistaray/enterprise "$OE_HOME/enterprise/addons"
 
     echo -e "\n---- Installing Enterprise specific libraries ----"
     sudo apt-get install nodejs npm
