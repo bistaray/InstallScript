@@ -14,11 +14,6 @@
 # ./odoo-install
 ################################################################################
  
-##fixed parameters
-#odoo
-OE_USER="odoo"
-OE_HOME="/$OE_USER"
-OE_HOME_EXT="/$OE_USER/${OE_USER}-server"
 #The default port where this Odoo instance will run under (provided you use the command -c in the terminal)
 #Set to true if you want to install it, false if you don't need it or have it already installed.
 INSTALL_WKHTMLTOPDF="True"
@@ -31,7 +26,7 @@ OE_VERSION="10.0"
 IS_ENTERPRISE="True"
 #set the superadmin password
 OE_SUPERADMIN="admin"
-OE_CONFIG="${OE_USER}-server"
+OE_CONFIG="odoo-server"
 
 ##
 ###  WKHTMLTOPDF download links
@@ -55,7 +50,7 @@ echo -e "\n---- Install PostgreSQL Server ----"
 sudo apt-get install postgresql -y
 
 echo -e "\n---- Creating the ODOO PostgreSQL User  ----"
-sudo su - postgres -c "createuser -s $OE_USER" 2> /dev/null || true
+sudo su - postgres -c "createuser -s odoo" 2> /dev/null || true
 
 #--------------------------------------------------
 # Install Dependencies
@@ -93,14 +88,12 @@ else
   echo "Wkhtmltopdf isn't installed due to the choice of the user!"
 fi
 	
-echo -e "\n---- Create ODOO system user ----"
-sudo adduser --system --quiet --shell=/bin/bash --home=$OE_HOME --gecos 'ODOO' --group $OE_USER
 #The user should also be added to the sudo'ers group.
-sudo adduser $OE_USER sudo
+sudo adduser odoo sudo
 
 echo -e "\n---- Create Log directory ----"
-sudo mkdir /var/log/$OE_USER
-sudo chown $OE_USER:$OE_USER /var/log/$OE_USER
+sudo mkdir /var/log/odoo
+sudo chown odoo:odoo /var/log/odoo
 
 #--------------------------------------------------
 # Install ODOO
@@ -113,7 +106,7 @@ if [ $IS_ENTERPRISE = "True" ]; then
     echo -e "\n--- Create symlink for node"
     sudo ln -s /usr/bin/nodejs /usr/bin/node
  
-    echo -e "\n---- Adding Enterprise code under $OE_HOME/enterprise/addons ----"
+    echo -e "\n---- Adding Enterprise code ----"
     git clone --depth 1 --branch 10.0 https://github.com/bistaray/enterprise /opt/enterprise
 
     echo -e "\n---- Installing Enterprise specific libraries ----"
@@ -122,33 +115,29 @@ if [ $IS_ENTERPRISE = "True" ]; then
     sudo npm install -g less-plugin-clean-css
 else
     echo -e "\n---- Create custom module directory ----"
-    sudo su $OE_USER -c "mkdir $OE_HOME/custom"
-    sudo su $OE_USER -c "mkdir $OE_HOME/custom/addons"
+    sudo su odoo -c "mkdir /opt/custom"
 fi
 
-echo -e "\n---- Setting permissions on home folder ----"
-sudo chown -R $OE_USER:$OE_USER $OE_HOME/*
-
 echo -e "* Create server config file"
-sudo cp $OE_HOME_EXT/debian/odoo.conf /etc/${OE_CONFIG}.conf
-sudo chown $OE_USER:$OE_USER /etc/${OE_CONFIG}.conf
+sudo cp /opt/odoo/debian/odoo.conf /etc/${OE_CONFIG}.conf
+sudo chown odoo:odoo /etc/${OE_CONFIG}.conf
 sudo chmod 640 /etc/${OE_CONFIG}.conf
 
 echo -e "* Change server config file"
-sudo sed -i s/"db_user = .*"/"db_user = $OE_USER"/g /etc/${OE_CONFIG}.conf
+sudo sed -i s/"db_user = .*"/"db_user = odoo"/g /etc/${OE_CONFIG}.conf
 sudo sed -i s/"; admin_passwd.*"/"admin_passwd = $OE_SUPERADMIN"/g /etc/${OE_CONFIG}.conf
 sudo su root -c "echo '[options]' >> /etc/${OE_CONFIG}.conf"
-sudo su root -c "echo 'logfile = /var/log/$OE_USER/$OE_CONFIG$1.log' >> /etc/${OE_CONFIG}.conf"
+sudo su root -c "echo 'logfile = /var/log/odoo/$OE_CONFIG$1.log' >> /etc/${OE_CONFIG}.conf"
 if [  $IS_ENTERPRISE = "True" ]; then
-    sudo su root -c "echo 'addons_path=$OE_HOME/enterprise/addons,$OE_HOME_EXT/addons' >> /etc/${OE_CONFIG}.conf"
+    sudo su root -c "echo 'addons_path=/opt/enterprise,/opt/custom' >> /etc/${OE_CONFIG}.conf"
 else
-    sudo su root -c "echo 'addons_path=$OE_HOME_EXT/addons,$OE_HOME/custom/addons' >> /etc/${OE_CONFIG}.conf"
+    sudo su root -c "echo 'addons_path=/opt/addons,/opt/custom' >> /etc/${OE_CONFIG}.conf"
 fi
 
 echo -e "* Create startup file"
 sudo su root -c "echo '#!/bin/sh' >> $OE_HOME_EXT/start.sh"
-sudo su root -c "echo 'sudo -u $OE_USER $OE_HOME_EXT/openerp-server --config=/etc/${OE_CONFIG}.conf' >> $OE_HOME_EXT/start.sh"
-sudo chmod 755 $OE_HOME_EXT/start.sh
+sudo su root -c "echo 'sudo -u odoo $OE_HOME_EXT/openerp-server --config=/etc/${OE_CONFIG}.conf' >> /home/odoo/start.sh"
+sudo chmod 755 /home/odoo/start.sh
 
 #--------------------------------------------------
 # Adding ODOO as a deamon (initscript)
@@ -169,12 +158,12 @@ cat <<EOF > ~/$OE_CONFIG
 # Description: ODOO Business Applications
 ### END INIT INFO
 PATH=/bin:/sbin:/usr/bin
-DAEMON=$OE_HOME_EXT/odoo-bin
+DAEMON=/opt/odoo/odoo-bin
 NAME=$OE_CONFIG
 DESC=$OE_CONFIG
 
 # Specify the user name (Default: odoo).
-USER=$OE_USER
+USER=odoo
 
 # Specify an alternate config file (Default: /etc/openerp-server.conf).
 CONFIGFILE="/etc/${OE_CONFIG}.conf"
@@ -243,11 +232,6 @@ echo -e "* Starting Odoo Service"
 sudo su root -c "/etc/init.d/$OE_CONFIG start"
 echo "-----------------------------------------------------------"
 echo "Done! The Odoo server is up and running. Specifications:"
-echo "Port: $OE_PORT"
-echo "User service: $OE_USER"
-echo "User PostgreSQL: $OE_USER"
-echo "Code location: $OE_USER"
-echo "Addons folder: $OE_USER/$OE_CONFIG/addons/"
 echo "Start Odoo service: sudo service $OE_CONFIG start"
 echo "Stop Odoo service: sudo service $OE_CONFIG stop"
 echo "Restart Odoo service: sudo service $OE_CONFIG restart"
