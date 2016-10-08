@@ -106,17 +106,15 @@ sudo chown $OE_USER:$OE_USER /var/log/$OE_USER
 # Install ODOO
 #--------------------------------------------------
 echo -e "\n==== Installing ODOO Server ===="
-sudo git clone --depth 1 --branch $OE_VERSION https://github.com/bistaray/odoo $OE_HOME_EXT/
+git clone --depth 1 --branch $OE_VERSION https://github.com/bistaray/odoo /opt/odoo
 
 if [ $IS_ENTERPRISE = "True" ]; then
     # Odoo Enterprise install!
     echo -e "\n--- Create symlink for node"
     sudo ln -s /usr/bin/nodejs /usr/bin/node
-    sudo su $OE_USER -c "mkdir $OE_HOME/enterprise"
-    sudo su $OE_USER -c "mkdir $OE_HOME/enterprise/addons"
-
+ 
     echo -e "\n---- Adding Enterprise code under $OE_HOME/enterprise/addons ----"
-    sudo git clone --depth 1 --branch 10.0 https://github.com/bistaray/enterprise "$OE_HOME/enterprise/addons"
+    git clone --depth 1 --branch 10.0 https://github.com/bistaray/enterprise /opt/enterprise
 
     echo -e "\n---- Installing Enterprise specific libraries ----"
     sudo apt-get install nodejs npm
