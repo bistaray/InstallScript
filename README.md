@@ -15,3 +15,5 @@ sudo chmod +x odoo_install.sh
 ```
 sudo ./odoo_install.sh
 ```
+
+http://unix.stackexchange.com/questions/199679/init-d-script-not-being-run-on-boot
